@@ -1,2 +1,2 @@
 # RESOL-VBusUSB-Adapter
-SUBSYSTEMS=="usb", ATTRS{idVendor}=="1fef", ATTRS{idProduct}=="2018", SYMLINK+="tty_resol", TAG+="systemd", ENV{SYSTEMD_WANTS}="monitor-vbus.service"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1fef", ATTRS{idProduct}=="2018", SYMLINK+="tty_resol", TAG+="systemd", ENV{SYSTEMD_WANTS}="monitor-vbus.service"
