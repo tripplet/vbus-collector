@@ -1,6 +1,6 @@
 #pragma once
 
-int connect_mqtt(const char* las_will_topic);
+int reconnect_mqtt(const char* las_will_topic);
 void disconnect_mqtt();
 
 void publish_str(const char* topic, const char* payload);

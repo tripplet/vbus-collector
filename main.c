@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
             printf("Connecting to mqtt server...\n");
         }
 
-    	connect_mqtt("heizung/status");
+    	reconnect_mqtt("heizung/status");
     }
 
 

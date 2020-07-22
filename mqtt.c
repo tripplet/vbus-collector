@@ -11,9 +11,15 @@
 #define TIMEOUT     3000L
 
 MQTTClient client;
+bool already_connected = false;
 
-int connect_mqtt(const char* last_will_topic)
+int reconnect_mqtt(const char* last_will_topic)
 {
+    if (already_connected)
+    {
+        return true;
+    }
+
     MQTTClient_willOptions last_will = MQTTClient_willOptions_initializer;
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
     int rc;
@@ -34,13 +40,14 @@ int connect_mqtt(const char* last_will_topic)
     }
 
     publish_str(last_will_topic, "1");
-
+    
+    already_connected = true;
     return true;
 }
 
 void disconnect_mqtt()
 {
-
+    already_connected = false;
     MQTTClient_disconnect(client, TIMEOUT);
     MQTTClient_destroy(&client);
 }
