@@ -38,8 +38,9 @@ static FILE *log_fp = NULL;
     #include <sys/types.h>
     #include <sys/stat.h>
     #include <fcntl.h>
-    #include <termio.h>
+    #include <termios.h>
     #include <linux/serial.h>
+    #include <sys/ioctl.h>
 
     static int fd = -1;
 #endif
