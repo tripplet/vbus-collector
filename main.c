@@ -3,7 +3,7 @@
 //
 // (c) Hewell Technology Ltd. 2014
 //
-// Tobias Tangemann 2017
+// Tobias Tangemann 2020
 //****************************************************************************
 
 
@@ -25,6 +25,8 @@
 #include "vbus.h"
 #include "mqtt.h"
 
+#include "config.h"
+
 #ifdef __SQLITE__
     #include "sqlite.h"
 #endif
@@ -39,21 +41,27 @@ int main(int argc, char *argv[])
     int headerSync = 0;
     int loopforever = 0;
     int packet_displayed = 0;
-    unsigned long delay = 0;
-    bool withSql = false;
-    bool print_result = true;
-    bool verbose = false;
-    bool use_mqtt = false;
+
+    CONFIG cfg = {
+        .serial_port = NULL,
+        .delay = 0,
+
+        .database = NULL,
+        .withSql = false,
+
+        .print_result = true,
+        .verbose = false,
+
+        .mqtt_enabled = false,
+        .mqtt_user = NULL,
+        .mqtt_password = NULL,
+        .mqtt_server = NULL,
+        .mqtt_base_topic = NULL,
+        .mqtt_client_id = NULL,
+    };
 
     start:
     headerSync = 0; packet_displayed = 0;
-
-    // last option is the serial port
-    if (argc < 2 || !serial_open_port(argv[argc - 1]))
-    {
-        printf("Errno(%d) opening %s: %s\n", errno, argv[1], strerror(errno));
-        return 2;
-    }
 
     if (argc > 2)
     {
@@ -68,12 +76,12 @@ int main(int argc, char *argv[])
 
             if (strcmp("-v", option) == 0 || strcmp("--verbose", option) == 0)
             {
-                verbose = true;
+                cfg.verbose = true;
             }
 
             if (strcmp("-m", option) == 0 || strcmp("--mqtt", option) == 0)
             {
-                use_mqtt = true;
+                cfg.mqtt_enabled = true;
             }
 
             if (strcmp("-d", option)==0 || strcmp("--delay", option)==0)
@@ -85,10 +93,10 @@ int main(int argc, char *argv[])
 
                 // Use next option as delay value
                 idx++;
-                delay = strtoul(argv[idx], NULL, 10);
+                cfg.delay = strtoul(argv[idx], NULL, 10);
 
                 #ifdef __WXMSW__
-                    delay *= 1000;
+                    cfg.delay *= 1000;
                 #endif
             }
 
@@ -101,27 +109,79 @@ int main(int argc, char *argv[])
                         return 5;
                     }
 
-                    // Use next option as delay value
+                    // Use next option as path to sqlite database
                     idx++;
-                    if (!sqlite_open(argv[idx]))
-                    {
-                        return 6;
-                    }
-
-                    sqlite_create_table();
-
-                    withSql = true;
+                    cfg.database = argv[idx];
                 }
             #endif
 
             if (strcmp("--no-print", option) == 0)
             {
-                print_result = false;
+                cfg.print_result = false;
+            }
+
+            if (strcmp("-c", option) == 0 || strcmp("--config", option) == 0)
+            {
+                #ifndef __JSON__
+                    printf("Config file is not supported");
+                    return 7;
+                #else
+                    if (argc <= idx + 1)
+                    {
+                        printf("Missing config file\n");
+                        return 7;
+                    }
+
+                    // Use next option as file name/path
+                    idx++;
+
+                    if (parseConfig(argv[idx], &cfg) != 0)
+                    {
+                        printf("Error parsing config file\n");
+                        return 7;
+                    }
+                #endif
             }
         }
     }
 
-    if (verbose)
+    // last option is the serial port if no config file is used
+    if (cfg.serial_port == NULL)
+    {
+        if (argc > 2)
+        {
+            cfg.serial_port = argv[argc - 1];
+        }
+        else
+        {
+            printf("No serial port set");
+            return 2;
+        }
+    }
+
+    if (!serial_open_port(cfg.serial_port))
+    {
+        printf("Errno(%d) opening serial port %s: %s\n", errno, cfg.serial_port, strerror(errno));
+        return 2;
+    }
+
+    if (cfg.database != NULL)
+    {
+        if (cfg.verbose)
+        {
+            printf("Opening database %s\n", cfg.database);
+        }
+
+        if (!sqlite_open(cfg.database))
+        {
+            return 6;
+        }
+
+        sqlite_create_table();
+        cfg.withSql = true;
+    }
+
+    if (cfg.verbose)
     {
         printf("Setting baudrate...\n");
     }
@@ -132,18 +192,18 @@ int main(int argc, char *argv[])
         return 3;
     }
 
-    if (use_mqtt)
+    if (cfg.mqtt_enabled)
     {
-        if (verbose)
+        if (cfg.verbose)
         {
             printf("Connecting to mqtt server...\n");
         }
 
-    	reconnect_mqtt("heizung/status");
+    	reconnect_mqtt(&cfg);
     }
 
 
-    if (verbose)
+    if (cfg.verbose)
     {
         printf("Collecting data...\n");
     }
@@ -167,26 +227,26 @@ int main(int argc, char *argv[])
             i=0;
             headerSync = 1;
 
-            if (verbose)
+            if (cfg.verbose)
             {
                 printf("\n\n");
             }
         }
 
-        if (verbose)
+        if (cfg.verbose)
         {
             printf("%02x ", serial_buffer[i]);
         }
 
         i++;
-        if (i % 16 == 0 && verbose)
+        if (i % 16 == 0 && cfg.verbose)
         {
             printf("\n");
         }
 
         if (headerSync)
         {
-            if (verbose)
+            if (cfg.verbose)
             {
                 printf("Header sync\n");
             }
@@ -214,7 +274,7 @@ int main(int argc, char *argv[])
                 //We have a whole packet..
                 unsigned char crc = vbus_calc_crc((void*)serial_buffer, 1, 8);
 
-                if (verbose)
+                if (cfg.verbose)
                 {
                     printf("\nPacket size: %d. Source: 0x%04x, Destination: 0x%04x, Command: 0x%04x, No of frames: %d, crc: 0x%02x(0x%02x)\n",
                         i, pPacket->h.source, pPacket->h.dest, pPacket->cmd, pPacket->frameCnt, pPacket->crc, crc);
@@ -222,7 +282,7 @@ int main(int argc, char *argv[])
 
                 if (pPacket->crc != crc)
                 {
-                    if (verbose)
+                    if (cfg.verbose)
                     {
                         printf("CRC Error!\n");
                     }
@@ -233,7 +293,7 @@ int main(int argc, char *argv[])
                 //Not sure what this packet is
                 if (pPacket->cmd != 0x0100 || pPacket->h.dest != 0x10)
                 {
-                    if (verbose)
+                    if (cfg.verbose)
                     {
                         printf("Ignoring unkown packet!\n");
                     }
@@ -248,7 +308,7 @@ int main(int argc, char *argv[])
                 {
                     crc = vbus_calc_crc((void*)&pPacket->frame[j], 0, 5);
 
-                    if (verbose)
+                    if (cfg.verbose)
                     {
                         printf("Bytes: 0x%02x%02x%02x%02x, Septett: 0x%02x, crc: 0x%02x(0x%02x)\n",
                             pPacket->frame[j].bytes[0], pPacket->frame[j].bytes[1], pPacket->frame[j].bytes[2], pPacket->frame[j].bytes[3],
@@ -258,7 +318,7 @@ int main(int argc, char *argv[])
                     crcOK = (pPacket->frame[j].crc == crc);
                     if (!crcOK)
                     {
-                        if (verbose)
+                        if (cfg.verbose)
                         {
                             printf("Frame CRC Error!\n");
                             crcOK = 0;
@@ -282,13 +342,13 @@ int main(int argc, char *argv[])
                 //printf("%d\n", sizeof(BS_Plus_Data_Packet));
 
                 #if __SQLITE__
-                    if (withSql)
+                    if (cfg.withSql)
                     {
                         sqlite_insert_data(&packet);
                     }
                 #endif
 
-                if (print_result)
+                if (cfg.print_result)
                 {
                     printf("System time:%02d:%02d"
                         ", Sensor1 temp:%.1fC"
@@ -330,14 +390,14 @@ int main(int argc, char *argv[])
                     );
                 }
 
-                if (use_mqtt)
+                if (cfg.mqtt_enabled)
                 {
-                    publish("heizung/ofen/temp", packet.bsPlusPkt.TempSensor1 * 0.1, "%.1f");
-                    publish("heizung/ofen/pump", packet.bsPlusPkt.PumpSpeed1);
-                    publish("heizung/ruecklauf/temp", packet.bsPlusPkt.TempSensor4 * 0.1, "%.1f");
-                    publish("heizung/ruecklauf/valve", packet.bsPlusPkt.PumpSpeed2 / 100);
-                    publish("heizung/speicher/oben/temp", packet.bsPlusPkt.TempSensor3 * 0.1, "%.1f");
-                    publish("heizung/speicher/unten/temp", packet.bsPlusPkt.TempSensor2 * 0.1, "%.1f");
+                    publish("ofen/temp", packet.bsPlusPkt.TempSensor1 * 0.1, "%.1f");
+                    publish("ofen/pump", packet.bsPlusPkt.PumpSpeed1);
+                    publish("ruecklauf/temp", packet.bsPlusPkt.TempSensor4 * 0.1, "%.1f");
+                    publish("ruecklauf/valve", packet.bsPlusPkt.PumpSpeed2 / 100);
+                    publish("speicher/oben/temp", packet.bsPlusPkt.TempSensor3 * 0.1, "%.1f");
+                    publish("speicher/unten/temp", packet.bsPlusPkt.TempSensor2 * 0.1, "%.1f");
                 }
 
                 packet_displayed++;
@@ -356,9 +416,9 @@ int main(int argc, char *argv[])
         sqlite_close();
     #endif
 
-    if (delay > 0)
+    if (cfg.delay > 0)
     {
-        if (delay == 60)
+        if (cfg.delay == 60)
         {
             time_t rawtime;
             struct tm * timeinfo;
@@ -368,16 +428,16 @@ int main(int argc, char *argv[])
 
             if (timeinfo->tm_sec < 59)
             {
-                sleep(delay - timeinfo->tm_sec);
+                sleep(cfg.delay - timeinfo->tm_sec);
             }
             else
             {
-                sleep(delay);
+                sleep(cfg.delay);
             }
         }
         else
         {
-            sleep(delay);
+            sleep(cfg.delay);
         }
 
         goto start;

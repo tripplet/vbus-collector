@@ -1,0 +1,15 @@
+{
+    "device": "/dev/serial/by-id/usb-1fef_2018-if00",
+    "interval": 0,
+    "verbose": true,
+    "database": "/tmp/db.sqlite",
+    "print_stdout": true,
+    "mqtt": {
+      "enabled": true,
+      "base_topic": "heizung",
+      "server": "tcp://localhost:1883",
+      "client_id": "vbus",
+      "user": null,
+      "password": null
+    }
+  }

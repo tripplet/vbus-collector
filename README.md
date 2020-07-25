@@ -44,6 +44,10 @@ $ cd /srv/vbus/collector/paho.mqtt.c
 $ mkdir build && cd build
 $ cmake -DPAHO_BUILD_STATIC=TRUE ..
 $ make -j
+$ cd "/srv/vbus/collector/cJSON"
+$ mkdir build && cd build
+$ cmake -DBUILD_SHARED_LIBS=OFF -DENABLE_CJSON_TEST=OFF -DENABLE_CJSON_UTILS=OFF -DENABLE_LOCALES=OFF ..
+$ make -j
 $ cd /srv/vbus/collector
 $ make
 ```
@@ -59,7 +63,7 @@ $ ln -s /srv/vbus/collector/monitor-vbus.service /etc/systemd/system/
 
 Get the connected usb devices, identify the vbus adapter and make sure the
 _00-resol-vbus-usb.rules_ file contains the correct vid and pid.
-For mine it was vid=1fef, and pid=2018, if these are different on your device,  change them in the provided `00-resol-vbus-usb.rules` file. 
+For mine it was vid=1fef, and pid=2018, if these are different on your device,  change them in the provided `00-resol-vbus-usb.rules` file.
 ```
 $ lsusb
   Bus 001 Device 011: ID 1fef:2018
