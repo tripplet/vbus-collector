@@ -8,8 +8,7 @@
 #include <curl/curl.h>
 
 #define AUTHORIZATION_HEADER "Authorization: Bearer %s"
-//#define HOMEASSISTANT_API_URL "http://supervisor/core/api/states/%s"
-#define HOMEASSISTANT_API_URL "http://172.20.28.201:8080/core/api/states/%s"
+#define HOMEASSISTANT_API_URL "http://supervisor/core/api/states/%s"
 
 
 CURL* curl = NULL;
