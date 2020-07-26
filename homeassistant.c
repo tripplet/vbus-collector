@@ -15,8 +15,9 @@ CURL* curl = NULL;
 struct curl_slist *headers = NULL;
 
 void publish_json(const char* sensor, CONFIG* cfg, cJSON* json);
+size_t curl_ignore_data(void *buffer, size_t size, size_t nmemb, void *userp);
 
-int homeassistant_init(CONFIG* cfg)
+bool homeassistant_init(CONFIG* cfg)
 {
     curl = curl_easy_init();
 
@@ -39,10 +40,14 @@ int homeassistant_init(CONFIG* cfg)
     {
         curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
     }
+    else
+    {
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_ignore_data);
+    }
 
     curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, -1L);
 
-    return 1;
+    return true;
 }
 
 void homeassistant_cleanup()
@@ -135,4 +140,9 @@ void publish_json(const char* sensor, CONFIG* cfg, cJSON* json)
 
     free(url);
     free(jsonString);
+}
+
+size_t curl_ignore_data(void *buffer, size_t size, size_t nmemb, void *userp)
+{
+   return size * nmemb;
 }
