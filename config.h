@@ -3,22 +3,25 @@
 #include <stdbool.h>
 
 typedef struct {
-    char* serial_port;
+    const char* serial_port;
 
-    unsigned long delay;
+    int delay;
 
-    char* database;
+    const char* database;
     bool withSql;
 
     bool print_result;
     bool verbose;
 
     bool mqtt_enabled;
-    char* mqtt_user;
-    char* mqtt_password;
-    char* mqtt_server;
-    char* mqtt_base_topic;
-    char* mqtt_client_id;
+    const char* mqtt_user;
+    const char* mqtt_password;
+    const char* mqtt_server;
+    const char* mqtt_base_topic;
+    const char* mqtt_client_id;
+
+    bool homeassistant_enabled;
+    const char* homeassistant_entity_id;
 } CONFIG;
 
 int parseConfig(const char* file, CONFIG* cfg);

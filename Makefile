@@ -3,18 +3,18 @@
 ############
 
 # C source files
-SOURCES = kbhit.c serial.c vbus.c sqlite.c mqtt.c config.c main.c
+SOURCES = kbhit.c serial.c vbus.c sqlite.c mqtt.c config.c homeassistant.c main.c
 
 # Optimization
-OPT = -O3 -flto
+OPT = -g # -O3 -flto
 
 TARGET = vbus-collector
 
 #===================================================================================
 
 CC = gcc
-CFLAGS = -std=c11 $(OPT) -c -Wall -Ipaho.mqtt.c/src/ -D__SQLITE__ -D__JSON__
-LDFLAGS = -LcJSON/build/ -Lpaho.mqtt.c/build/src/ $(OPT) -fuse-linker-plugin -lsqlite3 -l:libpaho-mqtt3c.a -l:libcjson.a -lpthread
+CFLAGS = -std=gnu11 $(OPT) -c -Wall -Ipaho.mqtt.c/src/ -D__SQLITE__ -D__JSON__
+LDFLAGS = -LcJSON/build/ -Lpaho.mqtt.c/build/src/ $(OPT) -fuse-linker-plugin -lcurl -lsqlite3 -l:libpaho-mqtt3c.a -l:libcjson.a -lpthread
 OBJECTS = $(SOURCES:%.c=$(OBJDIR)/%.o)
 
 REMOVE    = rm -f

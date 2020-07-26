@@ -85,7 +85,7 @@ const char *serial_get_error(void)
 }
 
 //***************************************************************************
-bool serial_open_port(char *port)
+bool serial_open_port(const char *port)
 {
     bool ret = false;
 

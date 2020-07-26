@@ -6,7 +6,6 @@
 // Tobias Tangemann 2020
 //****************************************************************************
 
-
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -19,13 +18,13 @@
 #include <fcntl.h>
 #include <time.h>
 
+#include "config.h"
 #include "datatypes.h"
 #include "kbhit.h"
 #include "serial.h"
 #include "vbus.h"
 #include "mqtt.h"
-
-#include "config.h"
+#include "homeassistant.h"
 
 #ifdef __SQLITE__
     #include "sqlite.h"
@@ -58,10 +57,10 @@ int main(int argc, char *argv[])
         .mqtt_server = NULL,
         .mqtt_base_topic = NULL,
         .mqtt_client_id = NULL,
-    };
 
-    start:
-    headerSync = 0; packet_displayed = 0;
+        .homeassistant_enabled = false,
+        .homeassistant_entity_id = NULL
+    };
 
     if (argc > 2)
     {
@@ -140,10 +139,14 @@ int main(int argc, char *argv[])
                         printf("Error parsing config file\n");
                         return 7;
                     }
+
                 #endif
             }
         }
     }
+
+    start:
+    headerSync = 0; packet_displayed = 0;
 
     // last option is the serial port if no config file is used
     if (cfg.serial_port == NULL)
@@ -179,6 +182,15 @@ int main(int argc, char *argv[])
 
         sqlite_create_table();
         cfg.withSql = true;
+    }
+
+    if (cfg.homeassistant_enabled)
+    {
+        if (!homeassistant_init(&cfg))
+        {
+            printf("Error initializing homeassistant");
+            return 20;
+        }
     }
 
     if (cfg.verbose)
@@ -392,12 +404,17 @@ int main(int argc, char *argv[])
 
                 if (cfg.mqtt_enabled)
                 {
-                    publish("ofen/temp", packet.bsPlusPkt.TempSensor1 * 0.1, "%.1f");
-                    publish("ofen/pump", packet.bsPlusPkt.PumpSpeed1);
-                    publish("ruecklauf/temp", packet.bsPlusPkt.TempSensor4 * 0.1, "%.1f");
-                    publish("ruecklauf/valve", packet.bsPlusPkt.PumpSpeed2 / 100);
-                    publish("speicher/oben/temp", packet.bsPlusPkt.TempSensor3 * 0.1, "%.1f");
-                    publish("speicher/unten/temp", packet.bsPlusPkt.TempSensor2 * 0.1, "%.1f");
+                    publish_mqtt("ofen/temp", packet.bsPlusPkt.TempSensor1 * 0.1, "%.1f");
+                    publish_mqtt("ofen/pump", packet.bsPlusPkt.PumpSpeed1);
+                    publish_mqtt("ruecklauf/temp", packet.bsPlusPkt.TempSensor4 * 0.1, "%.1f");
+                    publish_mqtt("ruecklauf/valve", packet.bsPlusPkt.PumpSpeed2 / 100);
+                    publish_mqtt("speicher/oben/temp", packet.bsPlusPkt.TempSensor3 * 0.1, "%.1f");
+                    publish_mqtt("speicher/unten/temp", packet.bsPlusPkt.TempSensor2 * 0.1, "%.1f");
+                }
+
+                if (cfg.homeassistant_enabled)
+                {
+                    publish_homeassistant(&cfg, &packet);
                 }
 
                 packet_displayed++;
@@ -441,6 +458,11 @@ int main(int argc, char *argv[])
         }
 
         goto start;
+    }
+
+    if (cfg.homeassistant_enabled)
+    {
+        homeassistant_cleanup();
     }
 
     return 0;

@@ -7,12 +7,13 @@
 
 #define QOS         1
 #define TIMEOUT     3000L
+#define WILL_TOPIC  "/status"
 
 MQTTClient client;
 bool already_connected = false;
 
 char* last_will_topic = NULL;
-char* base_topic = NULL;
+const char* base_topic = NULL;
 
 int reconnect_mqtt(const CONFIG* cfg)
 {
@@ -25,9 +26,8 @@ int reconnect_mqtt(const CONFIG* cfg)
 
     if (last_will_topic == NULL)
     {
-        last_will_topic = malloc(strlen(base_topic) + strlen("/status") + 1);
-        strcpy(last_will_topic, base_topic);
-        strcat(last_will_topic, "/status");
+        last_will_topic = malloc(strlen(base_topic) + strlen(WILL_TOPIC) + 1);
+        sprintf(last_will_topic, "%s%s", base_topic, WILL_TOPIC);
     }
 
     MQTTClient_willOptions last_will = MQTTClient_willOptions_initializer;
@@ -100,12 +100,12 @@ void publish_int(const char *topic, int payload)
 {
     char buffer[32];
     snprintf(buffer, 32, "%d", payload);
-    publish(topic, buffer);
+    publish_str(topic, buffer);
 }
 
 void publish_double(const char *topic, double payload, const char *format)
 {
     char buffer[32];
     snprintf(buffer, 32, format, payload);
-    publish(topic, buffer);
+    publish_str(topic, buffer);
 }

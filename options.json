@@ -5,11 +5,15 @@
     "database": "/tmp/db.sqlite",
     "print_stdout": true,
     "mqtt": {
-      "enabled": true,
-      "base_topic": "heizung",
-      "server": "tcp://localhost:1883",
-      "client_id": "vbus",
-      "user": null,
-      "password": null
+        "enabled": false,
+        "base_topic": "heizung",
+        "server": "tcp://localhost:1883",
+        "client_id": "vbus",
+        "user": null,
+        "password": null
+    },
+    "homeassistant": {
+        "enabled": true,
+        "entity_id": "sensor.heating"
     }
-  }
+}

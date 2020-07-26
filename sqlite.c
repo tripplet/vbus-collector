@@ -11,7 +11,7 @@ void sqlite_print_error(char* error_msg)
   sqlite3_free(error_msg);
 }
 
-bool sqlite_open(char *path)
+bool sqlite_open(const char *path)
 {
   if (sqlite3_open(path, &db) != 0)
   {

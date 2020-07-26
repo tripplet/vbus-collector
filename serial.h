@@ -9,7 +9,7 @@
 
 #pragma once
 
-extern bool serial_open_port(char *port);
+extern bool serial_open_port(const char *port);
 extern bool serial_set_baud_rate(int rate);
 extern bool serial_close_port(void);
 extern ssize_t serial_write(const void *buf, size_t count);
