@@ -75,8 +75,6 @@ int parseConfig(const char* file, CONFIG* cfg)
 
     status = getHomeassistantParameter(hass, cfg);
 
-    printf(cfg->homeassistant_entity_id_base);fflush(stdout);
-
 end:
     cJSON_Delete(json);
     free(config);
