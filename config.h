@@ -21,7 +21,7 @@ typedef struct {
     const char* mqtt_client_id;
 
     bool homeassistant_enabled;
-    const char* homeassistant_entity_id;
+    const char* homeassistant_entity_id_base;
 } CONFIG;
 
 int parseConfig(const char* file, CONFIG* cfg);

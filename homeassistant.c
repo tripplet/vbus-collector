@@ -31,15 +31,9 @@ int homeassistant_init(CONFIG* cfg)
 
     headers = curl_slist_append(headers, "Content-Type: application/json");
     headers = curl_slist_append(headers, bearer);
+    free(bearer);
 
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-    int url_length = strlen(HOMEASSISTANT_API_URL) + strlen(cfg->homeassistant_entity_id) + 1;
-    char *url = malloc(url_length);
-
-    snprintf(url, url_length, HOMEASSISTANT_API_URL, cfg->homeassistant_entity_id);
-
-    curl_easy_setopt(curl, CURLOPT_URL, url);
 
     if (cfg->verbose)
     {
@@ -47,9 +41,6 @@ int homeassistant_init(CONFIG* cfg)
     }
 
     curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, -1L);
-
-    free(bearer);
-    free(url);
 
     return 1;
 }
@@ -91,11 +82,11 @@ void publish_homeassistant(CONFIG* cfg, Data_Packet* data)
 
 void publish_json(const char* sensor, CONFIG* cfg, cJSON* json)
 {
-    int url_length = strlen(HOMEASSISTANT_API_URL) + strlen(cfg->homeassistant_entity_id) + strlen(sensor) + 1;
+    int url_length = strlen(HOMEASSISTANT_API_URL) + strlen(cfg->homeassistant_entity_id_base) + strlen(sensor) + 1;
     char *url = malloc(url_length);
 
     // Set url
-    snprintf(url, url_length, HOMEASSISTANT_API_URL"%s", cfg->homeassistant_entity_id, sensor);
+    snprintf(url, url_length, HOMEASSISTANT_API_URL"%s", cfg->homeassistant_entity_id_base, sensor);
     curl_easy_setopt(curl, CURLOPT_URL, url);
 
     // Set json payload

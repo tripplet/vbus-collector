@@ -14,6 +14,6 @@
     },
     "homeassistant": {
         "enabled": true,
-        "entity_id": "sensor.heating"
+        "entity_id_base": "sensor.heating"
     }
 }

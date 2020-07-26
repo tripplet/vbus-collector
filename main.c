@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
         .mqtt_client_id = NULL,
 
         .homeassistant_enabled = false,
-        .homeassistant_entity_id = NULL
+        .homeassistant_entity_id_base = NULL
     };
 
     if (argc > 2)

@@ -75,7 +75,7 @@ int parseConfig(const char* file, CONFIG* cfg)
 
     status = getHomeassistantParameter(hass, cfg);
 
-    printf(cfg->homeassistant_entity_id);fflush(stdout);
+    printf(cfg->homeassistant_entity_id_base);fflush(stdout);
 
 end:
     cJSON_Delete(json);
@@ -233,14 +233,14 @@ int getHomeassistantParameter(const cJSON* hass, CONFIG* cfg)
     }
 
     // Entity ID
-    value = cJSON_GetObjectItem(hass, "entity_id");
+    value = cJSON_GetObjectItem(hass, "entity_id_base");
     if (value == NULL || !cJSON_IsString(value))
     {
-        printf("Invalid value for homeassistant.entity_id\n");
+        printf("Invalid value for homeassistant.entity_id_base\n");
         return 10;
     }
 
-    cfg->homeassistant_entity_id = strdup(value->valuestring);
+    cfg->homeassistant_entity_id_base = strdup(value->valuestring);
 
     return 0;
 }
