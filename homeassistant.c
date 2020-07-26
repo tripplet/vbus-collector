@@ -8,7 +8,8 @@
 #include <curl/curl.h>
 
 #define AUTHORIZATION_HEADER "Authorization: Bearer %s"
-#define HOMEASSISTANT_API_URL "http://supervisor/core/api/states/%s"
+//#define HOMEASSISTANT_API_URL "http://supervisor/core/api/states/%s"
+#define HOMEASSISTANT_API_URL "http://172.20.28.201:8080/core/api/states/%s"
 
 
 CURL* curl = NULL;
@@ -61,22 +62,46 @@ void publish_homeassistant(CONFIG* cfg, Data_Packet* data)
     cJSON* root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "state", data->bsPlusPkt.TempSensor1 * 0.1);
     cJSON* attributes = cJSON_AddObjectToObject(root, "attributes");
-    cJSON_AddNumberToObject(attributes, "pump", data->bsPlusPkt.PumpSpeed1);
+    cJSON_AddStringToObject(attributes, "unit_of_measurement", "°C");
+    cJSON_AddStringToObject(attributes, "device_class", "temperature");
     publish_json("_furnace", cfg, root);
+    cJSON_Delete(root);
+
+    root = cJSON_CreateObject();
+    cJSON_AddNumberToObject(root, "state", data->bsPlusPkt.PumpSpeed1 / 2.55);
+    attributes = cJSON_AddObjectToObject(root, "attributes");
+    cJSON_AddStringToObject(attributes, "unit_of_measurement", "%");
+    publish_json("_furnace_pump", cfg, root);
     cJSON_Delete(root);
 
     root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "state", data->bsPlusPkt.TempSensor4 * 0.1);
     attributes = cJSON_AddObjectToObject(root, "attributes");
+    cJSON_AddStringToObject(attributes, "unit_of_measurement", "°C");
+    cJSON_AddStringToObject(attributes, "device_class", "temperature");
     cJSON_AddNumberToObject(attributes, "valve", data->bsPlusPkt.PumpSpeed2 / 100);
     publish_json("_returnflow", cfg, root);
     cJSON_Delete(root);
 
     root = cJSON_CreateObject();
+    cJSON_AddNumberToObject(root, "state", data->bsPlusPkt.PumpSpeed2 / 100);
+    publish_json("_returnflow_valve", cfg, root);
+    cJSON_Delete(root);
+
+    root = cJSON_CreateObject();
     cJSON_AddNumberToObject(root, "state", data->bsPlusPkt.TempSensor3 * 0.1);
     attributes = cJSON_AddObjectToObject(root, "attributes");
-    cJSON_AddNumberToObject(attributes, "bottom_temp", data->bsPlusPkt.TempSensor2 * 0.1);
-    publish_json("_tank", cfg, root);
+    cJSON_AddStringToObject(attributes, "unit_of_measurement", "°C");
+    cJSON_AddStringToObject(attributes, "device_class", "temperature");
+    publish_json("_tank_top", cfg, root);
+    cJSON_Delete(root);
+
+    root = cJSON_CreateObject();
+    cJSON_AddNumberToObject(root, "state", data->bsPlusPkt.TempSensor2 * 0.1);
+    attributes = cJSON_AddObjectToObject(root, "attributes");
+    cJSON_AddStringToObject(attributes, "unit_of_measurement", "°C");
+    cJSON_AddStringToObject(attributes, "device_class", "temperature");
+    publish_json("_tank_bottom", cfg, root);
     cJSON_Delete(root);
 }
 
