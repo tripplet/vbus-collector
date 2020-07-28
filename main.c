@@ -30,10 +30,16 @@
     #include "sqlite.h"
 #endif
 
+#if !defined(GIT_VERSION)
+    #define GIT_VERSION "unknown"
+#endif
+
 char serial_buffer[256];
 
 int main(int argc, char *argv[])
 {
+    printf("vbus-collector "GIT_VERSION"\n");
+
     Data_Packet packet;
     PVBUS_V1_CMD pPacket = (PVBUS_V1_CMD)&serial_buffer[0];
     unsigned char i = 0;
@@ -93,10 +99,6 @@ int main(int argc, char *argv[])
                 // Use next option as delay value
                 idx++;
                 cfg.delay = strtoul(argv[idx], NULL, 10);
-
-                #ifdef __WXMSW__
-                    cfg.delay *= 1000;
-                #endif
             }
 
             #ifdef __SQLITE__
@@ -222,6 +224,9 @@ int main(int argc, char *argv[])
 
     do
     {
+        // sleep 50ms
+        nanosleep((const struct timespec[]){{.tv_sec = 0, .tv_nsec = 50000000L}}, NULL);
+        
         if (caughtSigQuit())
         {
             break;
