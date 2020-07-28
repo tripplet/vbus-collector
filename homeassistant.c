@@ -19,10 +19,16 @@ size_t curl_ignore_data(void *buffer, size_t size, size_t nmemb, void *userp);
 
 bool homeassistant_init(CONFIG* cfg)
 {
+    if (curl != NULL)
+    {
+        return true;
+    }
+
     curl = curl_easy_init();
 
     const char* token = getenv("SUPERVISOR_TOKEN");
     if (token == NULL) {
+        printf("Homeassistant SUPERVISOR_TOKEN not found in environment\n");
         return 0;
     }
 
