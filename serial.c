@@ -31,9 +31,7 @@ static FILE *log_fp = NULL;
 
     static HANDLE handle = INVALID_HANDLE_VALUE;
 #else // __WXMSW__
-    #include <termios.h>
     #include <unistd.h>
-    #include <errno.h>
     #include <sys/time.h>
     #include <sys/types.h>
     #include <sys/stat.h>

@@ -16,6 +16,8 @@
 
 struct termios oldtermios;
 
+void (*usr1Callback)();
+
 int ttyraw(int fd)
 {
     /* Set terminal mode as follows:
@@ -96,17 +98,23 @@ int ttyreset(int fd)
 
 void sigcatch(int sig)
 {
-    ttyreset(0);
-    exit(0);
+    if (sig == SIGUSR1)
+    {
+        usr1Callback();
+    }
+    else 
+    {
+        ttyreset(0);
+        exit(0);
+    }
 }
 
-int caughtSigQuit(void)
+int caughtSigQuit(void (*userSignalCallback)())
 {
+    usr1Callback = *userSignalCallback;
+
+    signal(SIGUSR1, sigcatch);
+
 	return ((size_t)signal(SIGQUIT, sigcatch) < 0);
-}
-
-int catchSig(int sig)
-{
-	return ((size_t)signal(sig, sigcatch) < 0);
 }
 

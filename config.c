@@ -96,6 +96,18 @@ int getParameter(cJSON* json, CONFIG* cfg)
 
     cfg->serial_port = strdup(value->valuestring);
 
+    // reset vbus (via serial device)
+    value = cJSON_GetObjectItem(json, "reset_vbus");
+    if (value != NULL && value->valuestring != NULL) {
+        if (!cJSON_IsString(value))
+        {
+            printf("Invalid value for reset_vbus\n");
+            return 10;
+        }
+
+        cfg->reset_vbus = strdup(value->valuestring);
+    }
+
     // Database path
     value = cJSON_GetObjectItem(json, "database");
     if (value == NULL || !cJSON_IsString(value))

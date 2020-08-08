@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -36,6 +37,10 @@
 
 char serial_buffer[256];
 
+CONFIG* maincfg;
+
+void enableVerbose();
+
 int main(int argc, char *argv[])
 {
     printf("vbus-collector "GIT_VERSION"\n");
@@ -46,9 +51,11 @@ int main(int argc, char *argv[])
     int headerSync = 0;
     int loopforever = 0;
     int packet_displayed = 0;
+    bool firstLoop = true;
 
     CONFIG cfg = {
         .serial_port = NULL,
+        .reset_vbus = NULL,
         .delay = 0,
 
         .database = NULL,
@@ -67,6 +74,8 @@ int main(int argc, char *argv[])
         .homeassistant_enabled = false,
         .homeassistant_entity_id_base = NULL
     };
+
+    maincfg = &cfg;
 
     if (argc > 2)
     {
@@ -147,9 +156,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    start:
-    headerSync = 0; packet_displayed = 0;
-
     // last option is the serial port if no config file is used
     if (cfg.serial_port == NULL)
     {
@@ -163,6 +169,18 @@ int main(int argc, char *argv[])
             return 2;
         }
     }
+
+    if (cfg.homeassistant_enabled)
+    {
+        if (!homeassistant_init(&cfg))
+        {
+            printf("Error initializing homeassistant");
+            return 20;
+        }
+    }
+
+    start:
+    i = 0; headerSync = 0; packet_displayed = 0;
 
     if (!serial_open_port(cfg.serial_port))
     {
@@ -182,18 +200,13 @@ int main(int argc, char *argv[])
             return 6;
         }
 
-        sqlite_create_table();
-        cfg.withSql = true;
-    }
-
-    if (cfg.homeassistant_enabled)
-    {
-        if (!homeassistant_init(&cfg))
+        if (firstLoop)
         {
-            printf("Error initializing homeassistant");
-            return 20;
+            sqlite_create_table();            
         }
-    }
+        
+        cfg.withSql = true;
+    }    
 
     if (cfg.verbose)
     {
@@ -216,25 +229,23 @@ int main(int argc, char *argv[])
     	reconnect_mqtt(&cfg);
     }
 
-
     if (cfg.verbose)
     {
         printf("Collecting data...\n");
     }
 
     do
-    {
-        // sleep 50ms
-        nanosleep((const struct timespec[]){{.tv_sec = 0, .tv_nsec = 50000000L}}, NULL);
-        
-        if (caughtSigQuit())
+    {    
+        if (caughtSigQuit(enableVerbose))
         {
             break;
         }
 
-        int count = serial_read(&(serial_buffer[i]), 1);//sizeof(serial_buffer));
+        int count = serial_read(&(serial_buffer[i]), 1);
         if (count < 1)
         {
+            // sleep 50ms
+            nanosleep((const struct timespec[]){{.tv_sec = 0, .tv_nsec = 50000000L}}, NULL);            
             continue;
         }
 
@@ -253,24 +264,25 @@ int main(int argc, char *argv[])
         if (cfg.verbose)
         {
             printf("%02x ", serial_buffer[i]);
+
+            if (i != 0 && i % 16 == 0)
+            {
+                printf("\n");
+            }
         }
 
-        i++;
-        if (i % 16 == 0 && cfg.verbose)
-        {
-            printf("\n");
-        }
+        i++;        
 
         if (headerSync)
         {
-            if (cfg.verbose)
+            if (i == 1 && cfg.verbose)
             {
-                printf("Header sync\n");
+                printf("New packet\n");
             }
 
             if (i > sizeof(VBUS_HEADER))
             {
-                //we have nearly all the header
+                // we have nearly all the header
                 if ((pPacket->h.ver & 0xF0) != 0x10)
                 {
                     headerSync = 0;
@@ -288,12 +300,12 @@ int main(int argc, char *argv[])
 
                 headerSync = 0;
 
-                //We have a whole packet..
+                // Whole packet received, calculate CRC
                 unsigned char crc = vbus_calc_crc((void*)serial_buffer, 1, 8);
 
                 if (cfg.verbose)
                 {
-                    printf("\nPacket size: %d. Source: 0x%04x, Destination: 0x%04x, Command: 0x%04x, No of frames: %d, crc: 0x%02x(0x%02x)\n",
+                    printf("\n\nPacket size: %d. Source: 0x%04x, Destination: 0x%04x, Command: 0x%04x, No of frames: %d, crc: 0x%02x(0x%02x)\n",
                         i, pPacket->h.source, pPacket->h.dest, pPacket->cmd, pPacket->frameCnt, pPacket->crc, crc);
                 }
 
@@ -307,7 +319,7 @@ int main(int argc, char *argv[])
                     continue;
                 }
 
-                //Not sure what this packet is
+                // Not sure what this packet is
                 if (pPacket->cmd != 0x0100 || pPacket->h.dest != 0x10)
                 {
                     if (cfg.verbose)
@@ -318,21 +330,20 @@ int main(int argc, char *argv[])
                     continue;
                 }
 
-                //Packet is from DeltaSol BS Plus
-                //This is the packet we've been waiting for! Lets decode it....
+                // Packet is from DeltaSol BS Plus, decode it
                 int crcOK = 0;
                 for (unsigned char j = 0; j < pPacket->frameCnt; j++)
                 {
                     crc = vbus_calc_crc((void*)&pPacket->frame[j], 0, 5);
+                    crcOK = (pPacket->frame[j].crc == crc);
 
                     if (cfg.verbose)
                     {
-                        printf("Bytes: 0x%02x%02x%02x%02x, Septett: 0x%02x, crc: 0x%02x(0x%02x)\n",
+                        printf("Bytes: %02x%02x%02x%02x, Septett: %02x, crc: %02x(%s)\n",
                             pPacket->frame[j].bytes[0], pPacket->frame[j].bytes[1], pPacket->frame[j].bytes[2], pPacket->frame[j].bytes[3],
-                            pPacket->frame[j].septett, pPacket->frame[j].crc, crc);
+                            pPacket->frame[j].septett, pPacket->frame[j].crc, crcOK ? "ok" : "invalid");
                     }
 
-                    crcOK = (pPacket->frame[j].crc == crc);
                     if (!crcOK)
                     {
                         if (cfg.verbose)
@@ -356,18 +367,21 @@ int main(int argc, char *argv[])
                     continue;
                 }
 
-                //printf("%d\n", sizeof(BS_Plus_Data_Packet));
-
                 #if __SQLITE__
                     if (cfg.withSql)
                     {
+                        if (cfg.verbose) 
+                        {
+                            printf("\nWriting to database\n");
+                        }
+
                         sqlite_insert_data(&packet);
                     }
                 #endif
 
                 if (cfg.print_result)
                 {
-                    printf("System time:%02d:%02d"
+                    printf("\nSystem time:%02d:%02d"
                         ", Sensor1 temp:%.1fC"
                         ", Sensor2 temp:%.1fC"
                         ", Sensor3 temp:%.1fC"
@@ -409,6 +423,11 @@ int main(int argc, char *argv[])
 
                 if (cfg.mqtt_enabled)
                 {
+                    if (cfg.verbose) 
+                    {
+                        printf("\nPublishing to mqtt broker\n");
+                    }
+                    
                     publish_mqtt("ofen/temp", packet.bsPlusPkt.TempSensor1 * 0.1, "%.1f");
                     publish_mqtt("ofen/pump", packet.bsPlusPkt.PumpSpeed1);
                     publish_mqtt("ruecklauf/temp", packet.bsPlusPkt.TempSensor4 * 0.1, "%.1f");
@@ -419,6 +438,11 @@ int main(int argc, char *argv[])
 
                 if (cfg.homeassistant_enabled)
                 {
+                    if (cfg.verbose) 
+                    {
+                        printf("\nUpdating homeassistant\n");
+                    }
+
                     publish_homeassistant(&cfg, &packet);
                 }
 
@@ -462,6 +486,7 @@ int main(int argc, char *argv[])
             sleep(cfg.delay);
         }
 
+        firstLoop = false;
         goto start;
     }
 
@@ -471,4 +496,9 @@ int main(int argc, char *argv[])
     }
 
     return 0;
+}
+
+void enableVerbose()
+{
+    maincfg->verbose = true;
 }

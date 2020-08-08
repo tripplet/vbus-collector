@@ -10,7 +10,7 @@
 #ifndef KBHIT_H
 #define KBHIT_H
 
-extern int caughtSigQuit(void);
+extern int caughtSigQuit(void (*userSignalCallback)());
 extern int catchSig(int sig);
 
 #endif

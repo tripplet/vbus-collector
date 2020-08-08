@@ -5,6 +5,8 @@
 typedef struct {
     const char* serial_port;
 
+    const char* reset_vbus;
+
     int delay;
 
     const char* database;
