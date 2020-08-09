@@ -13,7 +13,6 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -305,8 +304,8 @@ int main(int argc, char *argv[])
 
                 if (cfg.verbose)
                 {
-                    printf("\n\nPacket size: %d. Source: 0x%04x, Destination: 0x%04x, Command: 0x%04x, No of frames: %d, crc: 0x%02x(0x%02x)\n",
-                        i, pPacket->h.source, pPacket->h.dest, pPacket->cmd, pPacket->frameCnt, pPacket->crc, crc);
+                    printf("\n\nPacket size: %d. Source: 0x%04x, Destination: 0x%04x, Command: 0x%04x, #Frames: %d, CRC: 0x%02x(%s)\n",
+                        i, pPacket->h.source, pPacket->h.dest, pPacket->cmd, pPacket->frameCnt, pPacket->crc, pPacket->crc == crc ? "ok" : "invalid");
                 }
 
                 if (pPacket->crc != crc)
