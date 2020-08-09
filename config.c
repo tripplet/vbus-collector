@@ -110,13 +110,15 @@ int getParameter(cJSON* json, CONFIG* cfg)
 
     // Database path
     value = cJSON_GetObjectItem(json, "database");
-    if (value == NULL || !cJSON_IsString(value))
-    {
-        printf("Invalid value for database\n");
-        return 10;
-    }
+    if (value != NULL && value->valuestring != NULL) {
+        if (!cJSON_IsString(value))
+        {
+            printf("Invalid value for database\n");
+            return 10;
+        }
 
-    cfg->database = strdup(value->valuestring);
+        cfg->database = strdup(value->valuestring);
+    }
 
     // Interval
     value = cJSON_GetObjectItem(json, "interval");
