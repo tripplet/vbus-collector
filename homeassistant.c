@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include <curl/curl.h>
 
@@ -78,7 +79,7 @@ void publish_homeassistant(CONFIG* cfg, Data_Packet* data)
     cJSON_Delete(root);
 
     root = cJSON_CreateObject();
-    cJSON_AddNumberToObject(root, "state", data->bsPlusPkt.PumpSpeed1 / 2.55);
+    cJSON_AddNumberToObject(root, "state", round(data->bsPlusPkt.PumpSpeed1 / 2.55));
     attributes = cJSON_AddObjectToObject(root, "attributes");
     cJSON_AddStringToObject(attributes, "unit_of_measurement", "%");
     publish_json("_furnace_pump", cfg, root);
@@ -152,3 +153,4 @@ size_t curl_ignore_data(void *buffer, size_t size, size_t nmemb, void *userp)
 {
    return size * nmemb;
 }
+
