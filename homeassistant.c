@@ -9,9 +9,10 @@
 #include <curl/curl.h>
 
 #define AUTHORIZATION_HEADER "Authorization: Bearer %s"
-#define HOMEASSISTANT_API_URL "http://supervisor/core/api/states/%s"
+#define DEFAULT_HOMEASSISTANT_URL "http://supervisor/core"
+#define API_ENDPOINT "/api/states/%s%s"
 
-
+char* base_url = NULL;
 CURL* curl = NULL;
 struct curl_slist *headers = NULL;
 
@@ -33,8 +34,21 @@ bool homeassistant_init(CONFIG* cfg)
         return 0;
     }
 
+    const char* env_base_url = getenv("HOMEASSISTANT_API_URL");
+    if (env_base_url != NULL) {
+        base_url = calloc(strlen(env_base_url) + strlen(API_ENDPOINT) + 1, sizeof(char));
+        strcpy(base_url, env_base_url);
+    }
+    else
+    {
+	base_url = calloc(strlen(DEFAULT_HOMEASSISTANT_URL) + strlen(API_ENDPOINT) + 1, sizeof(char));
+	strcpy(base_url, DEFAULT_HOMEASSISTANT_URL);
+    }
+
+    strcat(base_url, API_ENDPOINT);
+
     int bearer_length = strlen(AUTHORIZATION_HEADER) + strlen(token) + 1;
-    char *bearer = malloc(bearer_length);
+    char *bearer = calloc(bearer_length, sizeof(char));
     snprintf(bearer, bearer_length, AUTHORIZATION_HEADER, token);
 
     headers = curl_slist_append(headers, "Content-Type: application/json");
@@ -118,11 +132,11 @@ void publish_homeassistant(CONFIG* cfg, Data_Packet* data)
 
 void publish_json(const char* sensor, CONFIG* cfg, cJSON* json)
 {
-    int url_length = strlen(HOMEASSISTANT_API_URL) + strlen(cfg->homeassistant_entity_id_base) + strlen(sensor) + 1;
-    char *url = malloc(url_length);
+    int url_length = strlen(base_url) + strlen(cfg->homeassistant_entity_id_base) + strlen(sensor) + 1;
+    char *url = calloc(url_length, sizeof(char));
 
     // Set url
-    snprintf(url, url_length, HOMEASSISTANT_API_URL"%s", cfg->homeassistant_entity_id_base, sensor);
+    snprintf(url, url_length, base_url, cfg->homeassistant_entity_id_base, sensor);
     curl_easy_setopt(curl, CURLOPT_URL, url);
 
     // Set json payload
