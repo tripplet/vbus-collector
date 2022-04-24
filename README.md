@@ -7,6 +7,8 @@
 
 Data visualization is done by [vbus-server](https://github.com/tripplet/vbus-server)
 
+**The easiest way to use this project if Homeassistant is already used is to install the Addon [Hassio VBUS](https://github.com/tripplet/hassio-vbus)**
+
 ## Features
 * Save data to sqlite database
 * Send data to mqtt brocker (for integration in other home automation software)
