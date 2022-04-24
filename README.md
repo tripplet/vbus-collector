@@ -9,7 +9,8 @@ Data visualization is done by [vbus-server](https://github.com/tripplet/vbus-ser
 
 ## Features
 * Save data to sqlite database
-* Send data to mqtt brocker (for integration in other home automation software, e.g. [Home Assistant](https://www.home-assistant.io/))
+* Send data to mqtt brocker (for integration in other home automation software)
+* Direct HTTP integration to Homeassistant
 
 ## Docker container
 https://hub.docker.com/r/ttobias/vbus-collector/
@@ -38,7 +39,7 @@ $ cd /srv/vbus
 $ git clone --recurse-submodules https://github.com/tripplet/vbus-collector.git collector
 ```
 
-Compile the data collector service and the include mqtt library
+Compile the data collector service and the included libraries
 ```shell
 $ cd /srv/vbus/collector/paho.mqtt.c
 $ mkdir build && cd build
@@ -53,7 +54,7 @@ $ make
 ```
 
 
-### Setting up config files
+## Setting up system files
 
 Now the udev rule and systemd service file need to be soft linked to the right locations
 ```shell
@@ -106,7 +107,7 @@ $ systemctl status monitor-vbus
              └─12422 /srv/vbus/collector/vbus-collector --no-print --delay 60 --db /srv/vbus/collector/data.db /dev/tty_resol
 ```
 
-Check that data is beeing written to the sqlite database
+Check that data is being written to the sqlite database
 ```shell
 $ sqlite3 /srv/vbus/collector/data.db "SELECT * FROM data ORDER BY id DESC LIMIT 4;"
   174837|2015-09-02 11:28:10|10:24|18.8|20.9|22.6|22.9|0|0|2302|2425
@@ -119,3 +120,66 @@ $ sqlite3 /srv/vbus/collector/data.db "SELECT * FROM data ORDER BY id DESC LIMIT
 > ```shell
 > $ sqlite3 /srv/vbus/collector/data.db "SELECT datetime(time, 'localtime'),* FROM data;"
 > ```
+
+## Options file
+
+*vbus-collector* can be controlled using cli options for fast testing but the preferred way is to use an options file.
+
+For production the following file could be used.
+```json
+{
+    "device": "/dev/serial/by-id/usb-1fef_2018-if00",
+    "interval": 60,
+    "verbose": false,
+    "database": "/srv/vbus/collector/data.db",
+    "print_stdout": false,
+    "mqtt": {
+        "enabled": false,
+        "base_topic": "heizung",
+        "server": "tcp://localhost:1883",
+        "client_id": "vbus",
+        "user": null,
+        "password": null
+    },
+    "homeassistant": {
+        "enabled": false,
+        "entity_id_base": "sensor.heating"
+    }
+}
+```
+
+Usage:
+```shell
+$ vbus-collector --config options.json
+```
+
+## Homeassistant integration
+
+If Homeassistant is enabled in the options file, *vbus-collector* will send all sensor updates to the  Homeassitant instance using the [HTTP REST API](https://developers.home-assistant.io/docs/api/rest).
+
+All sensors are created using the `entity_id_base` appended with and underscore and the sensor name.
+For example: `sensor.heating_furnace`
+
+
+How to enable:
+1. Enable the homeassistant in the options.json.
+2. Enable the [API component](https://www.home-assistant.io/integrations/api/) in Homeassitant.
+3. Create a [long lived access token](https://www.home-assistant.io/docs/authentication/).
+4. Provide the access token using the environment variable `SUPERVISOR_TOKEN`.
+4. Provide the Homeassistant URL using the environment variable `HOMEASSISTANT_API_URL`.
+5. Optionally change the `entity_id_base` option.
+
+Setting environment variables for the systemd service can be done by creating the `/srv/vbus/collector/homeassistant-secrets` with the following content:
+
+```shell
+SUPERVISOR_TOKEN=....
+HOMEASSISTANT_API_URL=http://127.0.0.1:8123
+```
+
+Optionally if Homeassistant is running on a different system the environment variable `HOMEASSISTANT_API_URL` can be used to send the sensor values to a different system.
+
+Additionally I created a Homeassistant Addon [Hassio VBUS](https://github.com/tripplet/hassio-vbus) which runs *vbus-collector* and *vbus-server* inside a Homeassistant Addon.
+
+**The Addon is functional and working but lacks documentation**
+
+Have fun

@@ -1,8 +1,8 @@
 {
     "device": "/dev/serial/by-id/usb-1fef_2018-if00",
-    "interval": 0,
-    "verbose": true,
-    "database": "/tmp/db.sqlite",
+    "interval": 5,
+    "verbose": false,
+    "database": "/tmp/test.db",
     "print_stdout": true,
     "mqtt": {
         "enabled": false,
@@ -13,7 +13,7 @@
         "password": null
     },
     "homeassistant": {
-        "enabled": true,
+        "enabled": false,
         "entity_id_base": "sensor.heating"
     }
 }

@@ -5,6 +5,7 @@ After=dev-tty_resol.device
 
 [Service]
 Nice=1
-ExecStart=/srv/vbus/collector/vbus-collector --no-print --delay 60 --mqtt --db /srv/vbus/collector/data.db /dev/tty_resol
+EnvironmentFile=-/srv/vbus/collector/homeassistant-secrets
+ExecStart=/srv/vbus/collector/vbus-collector --config /srv/vbus/collector/options.json
 User=root
 Group=root
