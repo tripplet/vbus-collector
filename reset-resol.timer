@@ -1,0 +1,8 @@
+[Unit]
+Description=Reset the resol device after reboot
+
+[Timer]
+OnBootSec=30sec
+
+[Install]
+WantedBy=multi-user.target

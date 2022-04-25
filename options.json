@@ -1,9 +1,9 @@
 {
     "device": "/dev/serial/by-id/usb-1fef_2018-if00",
-    "interval": 5,
+    "interval": 60,
     "verbose": false,
-    "database": "/tmp/test.db",
-    "print_stdout": true,
+    "database": "/srv/vbus/collector/data.db",
+    "print_stdout": false,
     "mqtt": {
         "enabled": false,
         "base_topic": "heizung",

@@ -1,0 +1,8 @@
+[Unit]
+Description=Reset resol vbus device
+
+[Service]
+Type=oneshoot
+ExecStart=/bin/bash /srv/vbus/collector/reset-resol.sh
+User=root
+Group=root
