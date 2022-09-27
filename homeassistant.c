@@ -85,7 +85,7 @@ void publish_homeassistant(CONFIG* cfg, Data_Packet* data)
     }
 
     cJSON* root = cJSON_CreateObject();
-    cJSON_AddNumberToObject(root, "state", data->bsPlusPkt.TempSensor1 * 0.1);
+    cJSON_AddNumberToObject(root, "state", round(data->bsPlusPkt.TempSensor1 * 0.1));
     cJSON* attributes = cJSON_AddObjectToObject(root, "attributes");
     cJSON_AddStringToObject(attributes, "unit_of_measurement", "°C");
     cJSON_AddStringToObject(attributes, "device_class", "temperature");
@@ -100,7 +100,7 @@ void publish_homeassistant(CONFIG* cfg, Data_Packet* data)
     cJSON_Delete(root);
 
     root = cJSON_CreateObject();
-    cJSON_AddNumberToObject(root, "state", data->bsPlusPkt.TempSensor4 * 0.1);
+    cJSON_AddNumberToObject(root, "state", round(data->bsPlusPkt.TempSensor4 * 0.1));
     attributes = cJSON_AddObjectToObject(root, "attributes");
     cJSON_AddStringToObject(attributes, "unit_of_measurement", "°C");
     cJSON_AddStringToObject(attributes, "device_class", "temperature");
@@ -114,7 +114,7 @@ void publish_homeassistant(CONFIG* cfg, Data_Packet* data)
     cJSON_Delete(root);
 
     root = cJSON_CreateObject();
-    cJSON_AddNumberToObject(root, "state", data->bsPlusPkt.TempSensor3 * 0.1);
+    cJSON_AddNumberToObject(root, "state", round(data->bsPlusPkt.TempSensor3 * 0.1));
     attributes = cJSON_AddObjectToObject(root, "attributes");
     cJSON_AddStringToObject(attributes, "unit_of_measurement", "°C");
     cJSON_AddStringToObject(attributes, "device_class", "temperature");
@@ -122,7 +122,7 @@ void publish_homeassistant(CONFIG* cfg, Data_Packet* data)
     cJSON_Delete(root);
 
     root = cJSON_CreateObject();
-    cJSON_AddNumberToObject(root, "state", data->bsPlusPkt.TempSensor2 * 0.1);
+    cJSON_AddNumberToObject(root, "state", round(data->bsPlusPkt.TempSensor2 * 0.1));
     attributes = cJSON_AddObjectToObject(root, "attributes");
     cJSON_AddStringToObject(attributes, "unit_of_measurement", "°C");
     cJSON_AddStringToObject(attributes, "device_class", "temperature");
