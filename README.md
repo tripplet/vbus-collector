@@ -61,7 +61,7 @@ $ make
 Now the udev rule and systemd service file need to be soft linked to the right locations
 ```shell
 $ ln -s /srv/vbus/collector/00-resol-vbus-usb.rules /etc/udev/rules.d/
-$ ln -s /srv/vbus/collector/monitor-vbus.service /etc/systemd/system/
+$ systemctl link /srv/vbus/collector/monitor-vbus.service /etc/systemd/system/
 ```
 
 Get the connected usb devices, identify the vbus adapter and make sure the
