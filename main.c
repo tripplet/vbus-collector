@@ -44,7 +44,8 @@ int main(int argc, char *argv[])
 {
     printf("vbus-collector "GIT_VERSION"\n");
 
-    Data_Packet packet;
+    Data_Packet_BS packet;
+
     PVBUS_V1_CMD pPacket = (PVBUS_V1_CMD)&serial_buffer[0];
     unsigned char i = 0;
     int headerSync = 0;
@@ -201,11 +202,11 @@ int main(int argc, char *argv[])
 
         if (firstLoop)
         {
-            sqlite_create_table();            
+            sqlite_create_table();
         }
-        
+
         cfg.withSql = true;
-    }    
+    }
 
     if (cfg.verbose)
     {
@@ -234,7 +235,7 @@ int main(int argc, char *argv[])
     }
 
     do
-    {    
+    {
         if (caughtSigQuit(enableVerbose))
         {
             break;
@@ -244,7 +245,7 @@ int main(int argc, char *argv[])
         if (count < 1)
         {
             // sleep 50ms
-            nanosleep((const struct timespec[]){{.tv_sec = 0, .tv_nsec = 50000000L}}, NULL);            
+            nanosleep((const struct timespec[]){{.tv_sec = 0, .tv_nsec = 50000000L}}, NULL);
             continue;
         }
 
@@ -270,7 +271,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        i++;        
+        i++;
 
         if (headerSync)
         {
@@ -329,6 +330,17 @@ int main(int argc, char *argv[])
                     continue;
                 }
 
+                bool is_bs_2009 = false;
+                Data_Packet_DeltaSol_BS_2009 packet_bs_2009;
+
+                if (pPacket->h.source == 0x427b
+                    && pPacket->h.dest == 0x0010
+                    && pPacket->cmd == 0x0100)
+                {
+                    // Packet is from DeltaSol BS 2009
+                    is_bs_2009 = true;
+                }
+
                 // Packet is from DeltaSol BS Plus, decode it
                 int crcOK = 0;
                 for (unsigned char j = 0; j < pPacket->frameCnt; j++)
@@ -355,9 +367,36 @@ int main(int argc, char *argv[])
                     }
 
                     vbus_inject_septett((void *)&(pPacket->frame[j]), 0, 4);
+
                     for (unsigned char k = 0; k < 4; k++)
                     {
-                        packet.asBytes[(j * 4) + k] = pPacket->frame[j].bytes[k];
+                        if (is_bs_2009)
+                        {
+                            packet_bs_2009.asBytes[(j * 4) + k] = pPacket->frame[j].bytes[k];
+                        }
+                        else
+                        {
+                            packet.asBytes[(j * 4) + k] = pPacket->frame[j].bytes[k];
+                        }
+                    }
+
+                    // Dirty hack copy data over which us used bellow
+                    if (is_bs_2009)
+                    {
+                        packet.bsPlusPkt.PumpSpeed1 = packet_bs_2009.bsPlusPkt.PumpSpeed1;
+                        packet.bsPlusPkt.PumpSpeed2 = packet_bs_2009.bsPlusPkt.PumpSpeed2;
+
+                        packet.bsPlusPkt.TempSensor1 = packet_bs_2009.bsPlusPkt.TempSensor1;
+                        packet.bsPlusPkt.TempSensor2 = packet_bs_2009.bsPlusPkt.TempSensor2;
+                        packet.bsPlusPkt.TempSensor3 = packet_bs_2009.bsPlusPkt.TempSensor3;
+                        packet.bsPlusPkt.TempSensor4 = packet_bs_2009.bsPlusPkt.TempSensor4;
+
+                        packet.bsPlusPkt.Version = packet_bs_2009.bsPlusPkt.Version;
+                        packet.bsPlusPkt.SystemTime = packet_bs_2009.bsPlusPkt.SystemTime;
+                        packet.bsPlusPkt.HeatQuantityWH = packet_bs_2009.bsPlusPkt.HeatQuantityWH;
+
+                        packet.bsPlusPkt.OperatingHoursRelay1 = packet_bs_2009.bsPlusPkt.OperatingHoursRelay1;
+                        packet.bsPlusPkt.OperatingHoursRelay2 = packet_bs_2009.bsPlusPkt.OperatingHoursRelay2;
                     }
                 }
 
@@ -369,7 +408,7 @@ int main(int argc, char *argv[])
                 #if __SQLITE__
                     if (cfg.withSql)
                     {
-                        if (cfg.verbose) 
+                        if (cfg.verbose)
                         {
                             printf("\nWriting to database\n");
                         }
@@ -422,11 +461,11 @@ int main(int argc, char *argv[])
 
                 if (cfg.mqtt_enabled)
                 {
-                    if (cfg.verbose) 
+                    if (cfg.verbose)
                     {
                         printf("\nPublishing to mqtt broker\n");
                     }
-                    
+
                     publish_mqtt("ofen/temp", packet.bsPlusPkt.TempSensor1 * 0.1, "%.1f");
                     publish_mqtt("ofen/pump", packet.bsPlusPkt.PumpSpeed1);
                     publish_mqtt("ruecklauf/temp", packet.bsPlusPkt.TempSensor4 * 0.1, "%.1f");
@@ -437,7 +476,7 @@ int main(int argc, char *argv[])
 
                 if (cfg.homeassistant_enabled)
                 {
-                    if (cfg.verbose) 
+                    if (cfg.verbose)
                     {
                         printf("\nUpdating homeassistant\n");
                     }

@@ -1,6 +1,7 @@
 #ifndef DATATYPES_H
 #define DATATYPES_H
 
+// DeltaSol BS Plus
 #pragma pack(1)
 typedef union {
   struct {
@@ -29,6 +30,46 @@ typedef union {
     unsigned short Version;
   } bsPlusPkt;
   unsigned char asBytes[28];
-} Data_Packet;
+} Data_Packet_BS;
+
+// DeltaSol BS 2009
+// http://danielwippermann.github.io/resol-vbus/#/vsf/bytes/00_0010_427B_10_0100
+#pragma pack(1)
+typedef union {
+  struct {
+    short TempSensor1;
+    short TempSensor2;
+    short TempSensor3;
+    short TempSensor4;
+
+    unsigned char PumpSpeed1;
+    unsigned char ignore_1;
+
+    unsigned short OperatingHoursRelay1;
+
+    unsigned char PumpSpeed2;
+    unsigned char ignore_2;
+
+    unsigned short OperatingHoursRelay2;
+
+    unsigned char UnitType;
+    unsigned char System;
+
+    unsigned char ignore_3;
+    unsigned char ignore_4;
+
+    unsigned short ErrorMask;
+
+    unsigned short SystemTime;
+
+    unsigned int StatusMask;
+    unsigned int HeatQuantityWH;
+
+    unsigned short Version;
+
+    unsigned short Variant;
+  } bsPlusPkt;
+  unsigned char asBytes[36];
+} Data_Packet_DeltaSol_BS_2009;
 
 #endif

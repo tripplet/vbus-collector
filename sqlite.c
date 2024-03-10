@@ -46,7 +46,7 @@ bool sqlite_exec(char* sql)
 }
 
 
-bool sqlite_insert_data(Data_Packet* packet)
+bool sqlite_insert_data(Data_Packet_BS* packet)
 {
   char *error_msg;
   char sql_buffer[256];
