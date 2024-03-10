@@ -77,7 +77,7 @@ void homeassistant_cleanup()
     curl_easy_cleanup(curl);
 }
 
-void publish_homeassistant(CONFIG* cfg, Data_Packet* data)
+void publish_homeassistant(CONFIG* cfg, Data_Packet_BS* data)
 {
     if (curl == NULL)
     {
