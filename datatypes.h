@@ -2,8 +2,7 @@
 #define DATATYPES_H
 
 // DeltaSol BS Plus
-#pragma pack(1)
-typedef union {
+typedef union __attribute__((packed)) {
   struct {
     short TempSensor1;
     short TempSensor2;
@@ -34,8 +33,7 @@ typedef union {
 
 // DeltaSol BS 2009
 // http://danielwippermann.github.io/resol-vbus/#/vsf/bytes/00_0010_427B_10_0100
-#pragma pack(1)
-typedef union {
+typedef union __attribute__((packed)) {
   struct {
     short TempSensor1;
     short TempSensor2;

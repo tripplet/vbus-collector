@@ -44,13 +44,11 @@ $ git clone --recurse-submodules https://github.com/tripplet/vbus-collector.git 
 Compile the data collector service and the included libraries
 ```shell
 $ cd /srv/vbus/collector/paho.mqtt.c
-$ mkdir build && cd build
-$ cmake -DPAHO_BUILD_STATIC=TRUE ..
-$ make -j
+$ cmake -S . -B build -DPAHO_BUILD_STATIC=TRUE -DPAHO_ENABLE_TESTING=FALSE
+$ cmake --build build --parallel
 $ cd "/srv/vbus/collector/cJSON"
-$ mkdir build && cd build
-$ cmake -DBUILD_SHARED_LIBS=OFF -DENABLE_CJSON_TEST=OFF -DENABLE_CJSON_UTILS=OFF -DENABLE_LOCALES=OFF ..
-$ make -j
+$ cmake  -S . -B build -DBUILD_SHARED_LIBS=OFF -DENABLE_CJSON_TEST=OFF -DENABLE_CJSON_UTILS=OFF -DENABLE_LOCALES=OFF
+$ cmake --build build --parallel
 $ cd /srv/vbus/collector
 $ make
 ```

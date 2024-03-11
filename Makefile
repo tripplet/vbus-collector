@@ -7,6 +7,7 @@ SOURCES = kbhit.c serial.c vbus.c sqlite.c mqtt.c config.c homeassistant.c main.
 
 # Optimization
 OPT = -O3 -flto
+OPT_LINUX = -fwhole-program
 
 # For Debugging
 #OPT = -g
@@ -16,10 +17,18 @@ TARGET = vbus-collector
 #===================================================================================
 
 GIT_VERSION := "$(shell git describe --long --always --tags)"
+ROOT_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
+UNAME_S := $(shell uname -s)
+
+ifeq ($(UNAME_S),Linux)
+	OPT += $(OPT_LINUX)
+endif
 
 CC = gcc
 CFLAGS = -std=gnu11 $(OPT) -c -Wall -Ipaho.mqtt.c/src/ -D__SQLITE__ -D__JSON__ -DGIT_VERSION=\"$(GIT_VERSION)\"
-LDFLAGS = -LcJSON/build/ -Lpaho.mqtt.c/build/src/ $(OPT) -fuse-linker-plugin -lcurl -lsqlite3 -l:libpaho-mqtt3c.a -l:libcjson.a -lpthread -lm
+DYNAMIC_LIBS = -lcurl -lpthread -lm -lsqlite3
+STATIC_LIBS = $(ROOT_DIR)paho.mqtt.c/build/src/libpaho-mqtt3c.a $(ROOT_DIR)cJSON/build/libcjson.a
+LDFLAGS = $(OPT) $(DYNAMIC_LIBS) $(STATIC_LIBS)
 OBJECTS = $(SOURCES:%.c=$(OBJDIR)/%.o)
 
 REMOVE    = rm -f

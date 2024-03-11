@@ -6,8 +6,7 @@
 
 #pragma once
 
-#pragma pack(1)
-typedef struct _VBUS_HEADER
+typedef struct __attribute__((packed)) _VBUS_HEADER
 {
 	unsigned char syncByte;
 	unsigned short dest;
