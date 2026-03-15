@@ -1,0 +1,11 @@
+[Unit]
+Description=Toggle GPIO 21 with 30s Delay on Boot
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/reset-gpio.sh --delayed
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
