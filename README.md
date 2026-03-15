@@ -25,7 +25,7 @@ The RaspberryPi or other linux machine should be running and connected to the in
 Get the necessary packages (raspbian)
 ```shell
 $ apt-get update
-$ apt-get install git build-essential cmake libsqlite3-dev sqlite
+$ apt-get install git build-essential cmake libsqlite3-dev sqlite libcurl4-openssl-dev
 ```
 
 Get the necessary packages (archlinux-arm)
@@ -44,13 +44,13 @@ $ git clone --recurse-submodules https://github.com/tripplet/vbus-collector.git 
 Compile the data collector service and the included libraries
 ```shell
 $ cd /srv/vbus/collector/paho.mqtt.c
-$ cmake -S . -B build -DPAHO_BUILD_STATIC=TRUE -DPAHO_ENABLE_TESTING=FALSE
+$ cmake -S . -B build -DPAHO_BUILD_STATIC=TRUE -DPAHO_ENABLE_TESTING=FALSE -DCMAKE_BUILD_TYPE=Release
 $ cmake --build build --parallel
 $ cd "/srv/vbus/collector/cJSON"
-$ cmake  -S . -B build -DBUILD_SHARED_LIBS=OFF -DENABLE_CJSON_TEST=OFF -DENABLE_CJSON_UTILS=OFF -DENABLE_LOCALES=OFF
+$ cmake  -S . -B build -DBUILD_SHARED_LIBS=OFF -DENABLE_CJSON_TEST=OFF -DENABLE_CJSON_UTILS=OFF -DENABLE_LOCALES=OFF -DCMAKE_BUILD_TYPE=Release
 $ cmake --build build --parallel
 $ cd /srv/vbus/collector
-$ make
+$ make -j
 ```
 
 
