@@ -4,7 +4,7 @@ After=multi-user.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/reset-gpio.sh --delayed
+ExecStart=/srv/vbus/collector/reset-gpio.sh --delayed
 RemainAfterExit=yes
 
 [Install]

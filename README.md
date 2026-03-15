@@ -118,7 +118,7 @@ $ sqlite3 /srv/vbus/collector/data.db "SELECT * FROM data ORDER BY id DESC LIMIT
 > Date/Time values in the sqlite database are stored in UTC.
 > To get the correct local time ensure that the timezone on the system is set properly and use:
 > ```shell
-> $ sqlite3 /srv/vbus/collector/data.db "SELECT datetime(time, 'localtime'),* FROM data;"
+> $ sqlite3 /srv/vbus/collector/data.db "SELECT datetime(time, 'localtime'),* FROM data ORDER BY id DESC LIMIT 4;"
 > ```
 
 ## Options file
@@ -176,6 +176,41 @@ SUPERVISOR_TOKEN=....
 HOMEASSISTANT_API_URL=http://127.0.0.1:8123
 ```
 
+## Raspberry Pi USB issues (RESOL VBUS USB Adapter)
+
+The Resol VUSB seems to have some problems with Linux sometimes:
+Typical kernel log messages look like this:
+
+```
+usb 1-1: new full-speed USB device number 2 using dwc_otg
+usb 1-1: USB disconnect, device number 2
+usb usb1-port1: Cannot enable. Maybe the USB cable is bad?
+usb usb1-port1: attempt power cycle
+```
+
+### Solution
+
+## Solution: Reset the adapter using a GPIO pin
+
+I soldered a cable to the **RESET pin of the ATmel MCU** in the VBUS adapter.
+
+#### Step1: Holds the MCU in reset during boot using a GPIO pin from the raspberry
+
+Add the following line to `/boot/firmware/config.txt`:
+
+```
+gpio=21=op,dl
+```
+
+This configures GPIO21 as an output and keeps it **LOW during boot**, holding the MCU in reset.
+
+
+#### Step 2: Release reset after the system is ready
+
+Use the `reset-gpio.sh` and `reset-gpio.service` so the reset is lifted 30s after boot.
+
+
+## Homeassistant on a different host 
 Optionally if Homeassistant is running on a different system the environment variable `HOMEASSISTANT_API_URL` can be used to send the sensor values to a different system.
 
 Additionally I created a Homeassistant Addon [Hassio VBUS](https://github.com/tripplet/hassio-vbus) which runs *vbus-collector* and *vbus-server* inside a Homeassistant Addon.

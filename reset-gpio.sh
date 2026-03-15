@@ -8,13 +8,13 @@ if [[ "$1" == "--delayed" ]]; then
     sleep 30
 else
     echo "Manual mode: Executing reset immediately."
+    # Reset Sequence
+    
+    echo "Pulling GPIO $PIN LOW..."
+    pinctrl set $PIN op dl
+
+    sleep 2
 fi
-
-# Reset Sequence
-echo "Pulling GPIO $PIN LOW..."
-pinctrl set $PIN op dl
-
-sleep 2
 
 echo "Pulling GPIO $PIN HIGH..."
 pinctrl set $PIN op dh
